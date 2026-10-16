@@ -31,7 +31,7 @@ export function authRoutes(db: DB, requireAuth: any) {
     try {
       id = Number(db.prepare(`INSERT INTO users (name, email, password_hash, role) VALUES (?,?,?,'customer')`).run(name, email, hash).lastInsertRowid);
     } catch (e: any) {
-      if (String(e.code).startsWith('SQLITE_CONSTRAINT')) throw new HttpError(409, 'An account with this email already exists', 'EMAIL_TAKEN');
+      if (/UNIQUE|constraint/i.test(String(e.message))) throw new HttpError(409, 'An account with this email already exists', 'EMAIL_TAKEN');
       throw e;
     }
     res.status(201).json({ token: signToken(id), user: { id, name, email, role: 'customer' } });

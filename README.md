@@ -6,13 +6,13 @@ Full-stack take-home: customers browse movies, pick seats on an 8×10 seat map, 
 |---|---|
 | Frontend | React 19 + TypeScript + Vite, React Router, plain CSS |
 | Backend | Node.js 22 + Express 5 + TypeScript (REST API, runs separately on port 4000) |
-| Database | SQLite (via `better-sqlite3`), plain SQL, no ORM |
+| Database | SQLite via Node's built-in `node:sqlite`, plain SQL, no ORM |
 | Auth | Email + password (bcrypt hashes), JWT bearer tokens |
 | Tests | Vitest + Supertest (23 backend tests) |
 
 ## Run it locally
 
-Needs Node.js 20+ (developed on 22). No database server to install.
+Needs **Node.js 22.13 or newer** (developed on 22 and tested on 24). No database server to install and nothing to compile (SQLite is built into Node). Node prints an "ExperimentalWarning: SQLite is an experimental feature" line on start; it is harmless.
 
 ```bash
 # 1. Backend (terminal 1)
@@ -61,7 +61,7 @@ Not done / known limits are listed at the bottom.
 ## Key decisions
 
 - **Node + TypeScript backend**: same language as the frontend, so API types and validation rules are easy to share and reason about. Express because it is small and I wanted every route and rule visible, not hidden in a framework.
-- **SQLite, raw SQL**: zero setup for the reviewer (`npm install` and go). The schema uses only standard SQL (primary keys, foreign keys, CHECK constraints, transactions), so it moves to PostgreSQL with small changes (`INSERT OR IGNORE` → `INSERT … ON CONFLICT DO NOTHING`, `BEGIN IMMEDIATE` → a normal transaction). No ORM, so the booking logic is exactly the SQL you read.
+- **SQLite (Node's built-in `node:sqlite`), raw SQL**: zero setup for the reviewer (`npm install` and go, no native modules to compile, which matters on Windows). The schema uses only standard SQL (primary keys, foreign keys, CHECK constraints, transactions), so it moves to PostgreSQL with small changes (`INSERT OR IGNORE` → `INSERT … ON CONFLICT DO NOTHING`, `BEGIN IMMEDIATE` → a normal transaction). `backend/src/db.ts` is the only file that touches the SQLite driver. No ORM, so the booking logic is exactly the SQL you read.
 - **How double booking is prevented**: the `seat_locks` table has `PRIMARY KEY (show_id, seat_row, seat_number)`, so the database cannot hold two rows for one seat. Holding seats runs in one `BEGIN IMMEDIATE` transaction: delete this user's old hold and any *expired* holds, then insert one row per seat; if an insert is ignored because the key already exists, the whole transaction is rolled back (all-or-nothing) and the API replies `409` naming the seats. Paying converts the same rows from `held` to `booked` inside another transaction, so nobody can slip in between hold and payment.
 - **Holds expire lazily**: a hold is a row with `expires_at`. Every read ignores rows whose time has passed, and the next hold attempt deletes them. No background job, nothing to get out of sync, and expiry is exact even if the server restarts.
 - **Cancel = delete lock rows**: `booking_seats` keeps the permanent record of which seats a booking had; `seat_locks` only says what is taken *right now*, so cancelling just removes the lock rows.
