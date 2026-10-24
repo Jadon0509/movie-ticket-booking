@@ -23,8 +23,10 @@ export async function api<T = any>(method: string, path: string, body?: unknown)
     throw new ApiError(0, 'Cannot reach the server. Is the backend running?');
   }
   if (res.status === 204) return undefined as T;
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
+  const data = await res.json().catch(() => null);
+  if (!res.ok || data === null) {
+    // No JSON body usually means the dev proxy could not reach the backend.
+    if (data === null) throw new ApiError(res.status, 'Cannot reach the backend API. Make sure it is running (npm run dev in the backend folder, or npm run dev from the project root).');
     if (res.status === 401 && token && !path.startsWith('/auth/login')) onUnauthorized();
     throw new ApiError(res.status, data.error ?? 'Something went wrong', data.code, data);
   }

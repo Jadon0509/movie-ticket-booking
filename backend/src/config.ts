@@ -1,6 +1,9 @@
+import { fileURLToPath } from 'node:url';
+
+// fileURLToPath (not URL.pathname) so Windows paths like D:\\folder work.
 export const config = {
   port: Number(process.env.PORT ?? 4000),
-  dbPath: process.env.DB_PATH ?? new URL('../data/cinema.db', import.meta.url).pathname,
+  dbPath: process.env.DB_PATH ?? fileURLToPath(new URL('../data/cinema.db', import.meta.url)),
   jwtSecret: process.env.JWT_SECRET ?? 'dev-only-secret-change-me',
   bcryptRounds: Number(process.env.BCRYPT_ROUNDS ?? 10),
 };

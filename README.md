@@ -14,18 +14,32 @@ Full-stack take-home: customers browse movies, pick seats on an 8×10 seat map, 
 
 Needs **Node.js 22.13 or newer** (developed on 22 and tested on 24). No database server to install and nothing to compile (SQLite is built into Node). Node prints an "ExperimentalWarning: SQLite is an experimental feature" line on start; it is harmless.
 
+**Quickest way (from the project root, works on Windows / Mac / Linux):**
+
 ```bash
-# 1. Backend (terminal 1)
+npm install          # installs the helper that runs both servers together
+npm run setup        # installs backend + frontend and seeds the database
+npm run dev          # starts the API (port 4000) AND the app (port 5173)
+```
+
+Then open http://localhost:5173.
+
+**Or run the two parts separately (two terminals):**
+
+```bash
+# Terminal 1: backend
 cd backend
 npm install
 npm run seed      # creates the DB, an admin, a test customer, 5 movies and ~20 upcoming shows
 npm run dev       # API on http://localhost:4000
 
-# 2. Frontend (terminal 2)
+# Terminal 2: frontend
 cd frontend
 npm install
 npm run dev       # app on http://localhost:5173  (Vite proxies /api to the backend)
 ```
+
+The backend **must** be running, otherwise the app shows "Cannot reach the backend API".
 
 Run the tests: `cd backend && npm test` (type-check: `npm run typecheck`).
 Re-seeding is safe (it never duplicates users or movies). To start from scratch delete `backend/data/`.
