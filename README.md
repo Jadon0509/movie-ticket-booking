@@ -1,153 +1,419 @@
-<<<<<<< HEAD
-# Yozigo Cinema – Movie Ticket Booking App
+# 🎬 Yozigo Cinema — Movie Ticket Booking App
 
-Full-stack take-home: customers browse movies, pick seats on an 8×10 seat map, hold them for 5 minutes, pay (fake gateway) and get a booking. Admins manage movies and shows. **A seat can never be booked twice.**
+<p align="center">
+  <img src="https://img.shields.io/badge/CINEMA-MOVIE%20BOOKING-e50914?style=for-the-badge&logo=themoviedatabase&logoColor=white" alt="Yozigo Cinema" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React 19" />
+  <img src="https://img.shields.io/badge/Node.js-22-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js 22" />
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white" alt="SQLite" />
+</p>
 
-| Layer | Choice |
+<p align="center">
+  <strong>Your seats. Your movie. Your experience.</strong>
+  <br />
+  A full-stack cinema ticket booking application built with React, TypeScript, Node.js, Express, and SQLite.
+</p>
+
+---
+
+## 🍿 About the Project
+
+**Yozigo Cinema** is a full-stack movie ticket booking application where customers can browse movies, explore upcoming shows, select seats, hold them temporarily, complete a simulated payment, and manage their bookings.
+
+Administrators can manage movies and shows, view booking statistics, and mark damaged seats that must remain unavailable until repaired.
+
+The application focuses on reliable seat reservations, secure booking ownership, and preventing two customers from booking the same seat.
+
+> 🎯 **Core guarantee:** A seat cannot be booked twice for the same show.
+
+## ✨ Features
+
+| Feature | Description |
 |---|---|
-| Frontend | React 19 + TypeScript + Vite, React Router, plain CSS |
-| Backend | Node.js 22 + Express 5 + TypeScript (REST API, runs separately on port 4000) |
-| Database | SQLite via Node's built-in `node:sqlite`, plain SQL, no ORM |
-| Auth | Email + password (bcrypt hashes), JWT bearer tokens |
-| Tests | Vitest + Supertest (28 backend tests) |
+| 🔐 Authentication | Sign up, log in, log out, hashed passwords, and protected routes |
+| 🎬 Movie Catalogue | Browse movies and view movie details and upcoming shows |
+| 🪑 Interactive Seat Map | Select seats on an 8 × 10 seating layout |
+| ⏳ Temporary Seat Holds | Hold up to 6 seats for 5 minutes with a countdown |
+| 🔄 Live Seat Updates | Refresh seat availability every 3 seconds while the tab is visible |
+| 💳 Simulated Payment | Test payment success and failure without a real payment gateway |
+| 🎟️ Booking Management | View upcoming and past bookings |
+| ❌ Booking Cancellation | Cancel eligible bookings up to 2 hours before the show |
+| 🛠️ Admin Management | Create, update, and delete movies; create and manage shows |
+| 📊 Admin Statistics | View booking counts, occupancy, collected amounts, and booking lists |
+| 🚧 Damaged Seats | Mark seats as damaged or repair them using admin controls |
+| 🛡️ Double-Booking Protection | Database constraints and transactions prevent conflicting seat reservations |
 
-## Run it locally
+## 🎥 How Booking Works
 
-Needs **Node.js 22.13 or newer** (developed on 22 and tested on 24). No database server to install and nothing to compile (SQLite is built into Node). Node prints an "ExperimentalWarning: SQLite is an experimental feature" line on start; it is harmless.
+```mermaid
+flowchart TD
+    A["🎬 Browse Movies"] --> B["📅 Choose a Show"]
+    B --> C["🪑 Select Seats"]
+    C --> D["⏳ Hold Seats for 5 Minutes"]
+    D --> E["💳 Simulated Checkout"]
+    E --> F{"Payment Result"}
+    F -->|Success| G["🎟️ Booking Confirmed"]
+    F -->|Failure| H["↩️ Retry Checkout"]
+    H --> E
 
-**Quickest way (from the project root, works on Windows / Mac / Linux):**
-
-```bash
-npm install          # installs the helper that runs both servers together
-npm run setup        # installs backend + frontend and seeds the database
-npm run dev          # starts the API (port 4000) AND the app (port 5173)
+    style A fill:#252525,stroke:#e50914,color:#ffffff
+    style B fill:#252525,stroke:#e50914,color:#ffffff
+    style C fill:#252525,stroke:#e50914,color:#ffffff
+    style D fill:#3b1d24,stroke:#e50914,color:#ffffff
+    style E fill:#252525,stroke:#e50914,color:#ffffff
+    style G fill:#18351f,stroke:#339933,color:#ffffff
+    style H fill:#3b1d24,stroke:#e50914,color:#ffffff
 ```
 
-Then open http://localhost:5173.
+## 🪑 Seat Reservation System
 
-**Or run the two parts separately (two terminals):**
+The application uses an 8-row by 10-seat layout, with rows labelled A–H and seat numbers 1–10.
+
+- **Available:** The seat can be selected if it remains available.
+- **Held:** The seat is temporarily reserved while the hold is active.
+- **Booked:** The seat has been booked.
+- **My seat:** A seat held by the current user.
+- **Damaged:** The seat is unavailable until an administrator repairs it.
+
+The seed data marks seat **H10** as damaged for demonstration purposes.
+
+### 🔒 How Double Booking Is Prevented
+
+The backend uses a `seat_locks` table with a composite primary key:
+
+```sql
+PRIMARY KEY (show_id, seat_row, seat_number)
+```
+
+This ensures that only one active lock can exist for a seat in a particular show.
+
+Seat holds are processed inside a database transaction. If any requested seat is already taken, the operation rolls back instead of leaving a partial reservation.
+
+When checkout succeeds, the held seats become booked within another transaction.
+
+Expired holds are cleaned up when necessary, so seats can become available again without requiring a background job.
+
+## 🏗️ Architecture
+
+```mermaid
+flowchart TD
+    U["👤 Customer / Admin"]
+    FE["⚛️ React + TypeScript Frontend"]
+    API["🔌 Express REST API"]
+    AUTH["🔐 JWT Authentication"]
+    SERVICES["🎟️ Booking & Seat Services"]
+    DB[("🗄️ SQLite Database")]
+    ADMIN["🛠️ Admin Operations"]
+
+    U --> FE
+    FE <--> API
+    API --> AUTH
+    AUTH --> SERVICES
+    SERVICES <--> DB
+    ADMIN --> FE
+    ADMIN --> API
+
+    style U fill:#252525,stroke:#e50914,color:#ffffff
+    style FE fill:#172554,stroke:#61dafb,color:#ffffff
+    style API fill:#18351f,stroke:#339933,color:#ffffff
+    style AUTH fill:#252525,stroke:#e50914,color:#ffffff
+    style SERVICES fill:#252525,stroke:#e50914,color:#ffffff
+    style DB fill:#17202a,stroke:#61dafb,color:#ffffff
+    style ADMIN fill:#3b1d24,stroke:#e50914,color:#ffffff
+```
+
+### 🧰 Technology Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | React 19, TypeScript, Vite, React Router, CSS |
+| Backend | Node.js 22, Express 5, TypeScript |
+| API | REST API |
+| Database | SQLite using Node.js's built-in `node:sqlite` |
+| Database access | Raw SQL, transactions, constraints; no ORM |
+| Authentication | JWT bearer tokens |
+| Password security | bcrypt password hashes |
+| Testing | Vitest and Supertest |
+| Development | npm scripts |
+
+## 📂 Project Structure
+
+```text
+cinema/
+├── backend/
+│   ├── src/
+│   │   ├── db.ts
+│   │   └── ...
+│   ├── data/
+│   ├── package.json
+│   └── ...
+├── frontend/
+│   ├── src/
+│   ├── package.json
+│   └── ...
+├── package.json
+├── package-lock.json
+├── .gitignore
+└── README.md
+```
+
+*The source folders contain the application's backend services, frontend interface, database logic, and supporting code.*
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+Install:
+
+- **Node.js 22.13 or newer** (developed with Node.js 22 and tested with Node.js 24).
+- npm, which is included with Node.js.
+- Git, if you want to clone the repository.
+
+No separate database server is required. SQLite is provided through Node.js's built-in `node:sqlite` module.
+
+### 1. Open the Project
+
+Open a terminal in the `cinema` project directory.
+
+If you are currently in the parent project directory, run:
+
+```powershell
+cd cinema
+```
+
+If your terminal is already inside `cinema`, skip this command.
+
+### 2. Install Root Dependencies
 
 ```bash
-# Terminal 1: backend
+npm install
+```
+
+### 3. Set Up the Application
+
+```bash
+npm run setup
+```
+
+This script installs the backend and frontend dependencies and seeds the database.
+
+### 4. Start the Application
+
+```bash
+npm run dev
+```
+
+This starts both development servers:
+
+| Service | URL |
+|---|---|
+| Frontend | http://localhost:5173 |
+| Backend API | http://localhost:4000 |
+
+Open **http://localhost:5173** in your browser.
+
+> ⚠️ The backend must be running for the frontend to load application data. If the API is unavailable, the application displays a backend connection error.
+
+Node.js may display an experimental warning for `node:sqlite`. This warning is expected for the configured Node.js versions.
+
+### Alternative: Run Frontend and Backend Separately
+
+If you prefer separate terminals, run the backend first.
+
+**Terminal 1 — Backend**
+
+```bash
 cd backend
 npm install
-npm run seed      # creates the DB, an admin, a test customer, 5 movies and ~20 upcoming shows
-npm run dev       # API on http://localhost:4000
-
-# Terminal 2: frontend
-cd frontend
-npm install
-npm run dev       # app on http://localhost:5173  (Vite proxies /api to the backend)
+npm run seed
+npm run dev
 ```
 
-The backend **must** be running, otherwise the app shows "Cannot reach the backend API".
+The API runs on port `4000` by default.
 
-Run the tests: `cd backend && npm test` (type-check: `npm run typecheck`).
-Re-seeding is safe (it never duplicates users or movies). To start from scratch delete `backend/data/`.
+**Terminal 2 — Frontend**
 
-Optional env vars (backend): `PORT` (4000), `DB_PATH`, `JWT_SECRET` (**set this in any real deployment**), `BCRYPT_ROUNDS` (10).
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-### Test logins (created by `npm run seed`)
+The frontend runs on port `5173` by default and proxies `/api` requests to the backend.
+
+## 🔑 Demo Accounts
+
+The following test accounts are created by the seed script.
 
 | Role | Email | Password |
 |---|---|---|
 | Admin | `admin@cinema.test` | `Admin@1234` |
 | Customer | `customer@cinema.test` | `Customer@123` |
 
-Admins can only be created by the seed script; the sign-up endpoint ignores any `role` it is sent.
+**Important:** These credentials are for local development and testing only. Never use demo credentials in a production deployment.
 
-## What is finished
+Administrators can only be created through the seed script. The sign-up endpoint ignores any role supplied by the client.
 
-**All 10 flows (1–7 required, 8–10 bonus).**
+## 🧪 Testing
 
-1. Sign up / log in / log out, hashed passwords, generic login error, protected pages **and** protected API routes
-2. Movie list, movie detail with upcoming shows grouped by date, started shows hidden, seats left per show
-3. 8×10 seat map with "Screen this way", three seat states, loaded from the API
-4. Select 1–6 seats, hold for 5 min with countdown, clear error naming the taken seat, auto-release on expiry
-5. Fake payment (success / failure buttons), booking confirmation, retry after failure, rejection after expiry, no double booking (tested)
-6. My bookings (upcoming first, then past), a user can never read another user's booking
-7. Admin: movie CRUD, add show, overlap check, can't delete a show with bookings, admin-only API
-8. Cancel up to 2 hours before the show; seats are freed immediately
-9. Admin: booked/80, % full, money collected per show; booking list; same seat map
-10. Live seat updates by polling every 3 seconds
+Run the backend tests:
 
-**Extra feature: damaged seats.** An admin can mark a seat as damaged (or repair it) by clicking it on the admin show page. A damaged seat shows as ✕ on every show's seat map and can never be held or booked; the backend rejects it with `409 SEAT_DAMAGED` even if someone calls the API directly. A seat that is already booked or held for an upcoming show can't be marked damaged until those bookings are cancelled. The seed marks seat H10 as damaged for the demo.
-
-Not done / known limits are listed at the bottom.
-
-## Key decisions
-
-- **Node + TypeScript backend**: same language as the frontend, so API types and validation rules are easy to share and reason about. Express because it is small and I wanted every route and rule visible, not hidden in a framework.
-- **SQLite (Node's built-in `node:sqlite`), raw SQL**: zero setup for the reviewer (`npm install` and go, no native modules to compile, which matters on Windows). The schema uses only standard SQL (primary keys, foreign keys, CHECK constraints, transactions), so it moves to PostgreSQL with small changes (`INSERT OR IGNORE` → `INSERT … ON CONFLICT DO NOTHING`, `BEGIN IMMEDIATE` → a normal transaction). `backend/src/db.ts` is the only file that touches the SQLite driver. No ORM, so the booking logic is exactly the SQL you read.
-- **How double booking is prevented**: the `seat_locks` table has `PRIMARY KEY (show_id, seat_row, seat_number)`, so the database cannot hold two rows for one seat. Holding seats runs in one `BEGIN IMMEDIATE` transaction: delete this user's old hold and any *expired* holds, then insert one row per seat; if an insert is ignored because the key already exists, the whole transaction is rolled back (all-or-nothing) and the API replies `409` naming the seats. Paying converts the same rows from `held` to `booked` inside another transaction, so nobody can slip in between hold and payment.
-- **Holds expire lazily**: a hold is a row with `expires_at`. Every read ignores rows whose time has passed, and the next hold attempt deletes them. No background job, nothing to get out of sync, and expiry is exact even if the server restarts.
-- **Cancel = delete lock rows**: `booking_seats` keeps the permanent record of which seats a booking had; `seat_locks` only says what is taken *right now*, so cancelling just removes the lock rows.
-- **Overlap check**: `ends_at` is stored (start + movie duration). A new show clashes when `existing.start < new.end AND existing.end > new.start`. Back-to-back shows (one ends exactly when the next starts) are allowed. Editing a movie's duration re-checks its shows.
-- **Auth**: JWT in the `Authorization` header, user re-loaded from the DB on each request (so a deleted user or changed role takes effect at once). Authorisation is enforced in the backend; the React guards are only for UX. Other users' bookings return `404`, not `403`, so IDs can't be probed.
-- **Live updates = polling (3 s)**: simplest thing that meets "within a few seconds". It is stateless, needs no extra infrastructure, survives restarts and proxies, and the seat map is one cheap query. Server-Sent Events would reduce latency and traffic, but need a pub/sub layer once there is more than one server process. Polling pauses when the tab is hidden.
-- **Times**: stored as UTC ISO strings, shown in the viewer's local time. Prices are whole rupees.
-
-## Database design
-
-```mermaid
-erDiagram
-  users ||--o{ bookings : makes
-  shows ||--o{ bookings : has
-  movies ||--o{ shows : "is screened as"
-  bookings ||--|{ booking_seats : contains
-  shows ||--o{ seat_locks : "has taken seats"
-  users ||--o{ seat_locks : holds
-  bookings ||--o{ seat_locks : "confirms"
+```bash
+cd backend
+npm test
 ```
 
-| Table | Columns |
+The project includes **28 backend tests** using Vitest and Supertest.
+
+The tests cover important cases, including:
+
+- Two users attempting to reserve the same seat.
+- Database constraints preventing duplicate seat locks.
+- Holds across separate database connections.
+- Payment success, payment failure, and expired holds.
+- Booking ownership and cancellation rules.
+- Damaged-seat restrictions and repair operations.
+- Admin permissions and showtime overlap checks.
+- Booking statistics and show deletion rules.
+
+To run the backend type check:
+
+```bash
+npm run typecheck
+```
+
+Run this command from the `backend` directory.
+
+### Resetting the Seed Database
+
+Re-running the seed script is safe and does not duplicate users or movies.
+
+To start from a fresh local database, stop the application and delete the generated `backend/data/` directory before running setup or seeding again. This permanently removes the local database and its stored bookings.
+
+## 🛠️ Admin Capabilities
+
+The administrative functionality includes:
+
+- Create, update, and delete movies.
+- Add and manage showtimes.
+- Reject overlapping showtimes.
+- Prevent deletion of shows that have booking records.
+- Review booking lists and show statistics.
+- View booked seats, occupancy, and collected amounts.
+- Mark seats as damaged and repair them when eligible.
+
+A seat that is already held or booked for an upcoming show cannot be marked as damaged until the relevant bookings or holds have been resolved.
+
+Damaged seats are unavailable across shows on the application's single screen. The backend rejects attempts to hold a damaged seat with a `409 SEAT_DAMAGED` response.
+
+## 🔌 API Overview
+
+The backend exposes REST endpoints for authentication, movies, shows, bookings, and administrative operations.
+
+| Endpoint | Purpose |
 |---|---|
-| `users` | `id` PK, `name`, `email` UNIQUE (case-insensitive), `password_hash`, `role` (`customer`/`admin`), `created_at` |
-| `movies` | `id` PK, `title`, `description`, `poster_url`, `language`, `duration_minutes` (1–600), `rating` (`U`/`UA`/`A`) |
-| `shows` | `id` PK, `movie_id` FK, `starts_at`, `ends_at`, `price` (> 0); CHECK `ends_at > starts_at` |
-| `bookings` | `id` PK, `user_id` FK, `show_id` FK, `total_amount`, `status` (`confirmed`/`cancelled`), `created_at`, `cancelled_at` |
-| `booking_seats` | PK (`booking_id`, `seat_row`, `seat_number`); `booking_id` FK. Permanent record of a booking's seats |
-| `damaged_seats` | PK (`seat_row`, `seat_number`), `reason`, `marked_at`. Seats that are broken; apply to every show (one screen) |
-| `seat_locks` | **PK (`show_id`, `seat_row`, `seat_number`)** ← the anti-double-booking rule. Also `user_id` FK, `status` (`held`/`booked`), `booking_id` FK (null while held), `expires_at` (only while held). CHECK keeps the held/booked fields consistent |
+| `POST /api/auth/signup` | Register a customer |
+| `POST /api/auth/login` | Log in |
+| `GET /api/auth/me` | Get the current authenticated user |
+| `GET /api/movies` | List movies |
+| `GET /api/movies/:id` | Get movie details and upcoming shows |
+| `GET /api/shows/:id` | Get show details |
+| `GET /api/shows/:id/seats` | Retrieve the seat map |
+| `POST /api/shows/:id/hold` | Hold up to six seats for five minutes |
+| `DELETE /api/shows/:id/hold` | Release a seat hold |
+| `POST /api/shows/:id/checkout` | Complete the simulated checkout |
+| `GET /api/bookings` | List the current user's bookings |
+| `GET /api/bookings/:id` | Retrieve an owned booking |
+| `POST /api/bookings/:id/cancel` | Cancel an eligible booking |
+| `/api/admin/movies` | Administrative movie management |
+| `/api/admin/shows` | Administrative show management |
+| `/api/admin/damaged-seats` | Retrieve, mark, or repair damaged seats |
 
-Seat rows are limited to A–H and numbers to 1–10 by CHECK constraints.
+Protected endpoints require the appropriate authentication and authorization. Users cannot retrieve another customer's booking.
 
-## API summary
+API errors use a JSON response containing an error message and, where applicable, an error code.
 
-| Method & path | Who | Purpose |
-|---|---|---|
-| `POST /api/auth/signup`, `POST /api/auth/login`, `GET /api/auth/me` | public / user | accounts |
-| `GET /api/movies`, `GET /api/movies/:id`, `GET /api/shows/:id` | public | catalogue; movie detail lists only upcoming shows |
-| `GET /api/shows/:id/seats` | user | seat map (`available` / `held` / `booked` / `mine`) |
-| `POST /api/shows/:id/hold` · `DELETE …/hold` | user | hold up to 6 seats for 5 min / release |
-| `POST /api/shows/:id/checkout` `{outcome}` | user | fake payment: `success` books, `failure` returns 402 and keeps the hold |
-| `GET /api/bookings`, `GET /api/bookings/:id`, `POST /api/bookings/:id/cancel` | owner only | my bookings |
-| `/api/admin/damaged-seats` (GET, POST `{seat}`, DELETE/:seat) | admin | mark / repair damaged seats |
-| `/api/admin/movies` (POST, PUT/:id, DELETE/:id) · `/api/admin/shows` (GET, POST, DELETE/:id, GET/:id) | admin | management and stats |
+## 🧠 Key Engineering Decisions
 
-Errors are JSON: `{ "error": "message", "code": "…" }`.
+### 1. SQLite Without an External Database Server
 
-## Tests
+The project uses Node.js's built-in `node:sqlite` and raw SQL. This avoids a separate database installation and native database driver compilation.
 
-`npm test` in `backend/` runs 28 tests against an in-memory database. The ones that matter most:
+### 2. Transactional Seat Holds
 
-- two users racing for the same seat → exactly one `201`, one `409`, and no leftover seats for the loser
-- the database itself rejects a second row for the same seat (no application code involved)
-- holds from **two separate database connections** to the same file cannot overlap
-- payment success / failure / paying after expiry; expired holds free the seat
-- bookings are private to their owner; cancel rules (2-hour cut-off, seats freed)
-- damaged seats: can't be held (all-or-nothing), shown as damaged, repair works, can't mark a booked seat, admin-only
-- admin: customers get `403`, overlap rejection, can't delete a show with bookings, stats
+Seat holds are handled transactionally to prevent partial reservations. Database constraints provide an additional layer of protection against duplicate seat locks.
 
-## Assumptions and limitations
+### 3. Expiring Holds
 
-- One screen, one cinema, as specified. Seeded show times use the *server's* local time zone.
-- The payment outcome is sent by the browser because the gateway is fake; a real one would call a server-verified webhook.
-- A show with *any* booking row (even a cancelled one) can't be deleted, which keeps booking history intact. Shows can't be edited, only deleted and re-added.
-- SQLite allows one writer at a time. That is fine for one small cinema, and is exactly why the seat logic is safe; on PostgreSQL the same primary key plus a transaction gives the same guarantee.
-- The JWT lives in `localStorage` (simple, but exposed to XSS; httpOnly cookies would be the hardened alternative). No rate limiting on login.
-- Desktop-first layout. No Docker Compose and no front-end automated tests.
-- Not deployed (no live link).
-=======
-# movie-ticket-booking
->>>>>>> origin/main
+Each temporary hold stores an expiration timestamp. Expired holds no longer block availability and are cleaned up during subsequent operations.
+
+### 4. Secure Booking Ownership
+
+JWT authentication identifies the current user. The backend reloads user information from the database and enforces authorization on protected routes.
+
+### 5. Showtime Overlap Validation
+
+Showtime scheduling checks whether a new show overlaps an existing show. Back-to-back shows are allowed when one ends exactly as the next begins.
+
+### 6. Live Seat Availability
+
+The frontend polls for seat updates every three seconds while the browser tab is visible. This keeps seat availability reasonably fresh without requiring WebSockets or another persistent messaging service.
+
+## ⚙️ Environment Configuration
+
+The backend supports these optional environment variables:
+
+| Variable | Purpose |
+|---|---|
+| `PORT` | API port; defaults to `4000` |
+| `DB_PATH` | Database file location |
+| `JWT_SECRET` | Secret used for JWT signing |
+| `BCRYPT_ROUNDS` | Password hashing cost; defaults to `10` |
+
+For any real deployment, configure a strong, private `JWT_SECRET`. Never commit actual secrets or production environment files to GitHub.
+
+## ⚠️ Known Limitations
+
+- The application models one cinema screen with 80 seats.
+- Payment is simulated; no real payment provider is integrated.
+- Seeded showtimes use the server's local time zone.
+- The JWT is stored in `localStorage`, which has security trade-offs if an XSS vulnerability exists.
+- Login rate limiting is not implemented.
+- The interface is desktop-first.
+- Frontend automated tests and Docker Compose are not included.
+- The project does not currently have a live deployment.
+
+## 🗺️ Future Improvements
+
+Possible future enhancements include:
+
+- 🎞️ Richer movie artwork and detail pages.
+- 🎨 More polished seat-selection animations and visual transitions.
+- 📱 Improved mobile and responsive layouts.
+- 🔔 Booking confirmation notifications.
+- 💳 Integration with a real payment gateway.
+- ⚡ Server-Sent Events or WebSockets for real-time seat updates.
+- 🧪 Expanded frontend testing and end-to-end tests.
+- 🚀 Automated deployment and continuous integration.
+
+## 🤝 Contributing
+
+Suggestions and contributions are welcome.
+
+1. Create a branch for your change.
+2. Implement the feature or fix.
+3. Run the relevant tests and type checks.
+4. Review your changes before committing.
+5. Open a pull request with a clear description.
+
+## 📜 License
+
+No license has been specified yet. Add a `LICENSE` file if you intend to distribute this project under an open-source license.
+
+---
+
+<p align="center">
+  <strong>🍿 Pick your seats. Book your movie. Enjoy the show.</strong>
+  <br />
+  <em>Built with ❤️ for movie lovers.</em>
+</p>
