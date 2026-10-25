@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Yozigo Cinema – Movie Ticket Booking App
 
 Full-stack take-home: customers browse movies, pick seats on an 8×10 seat map, hold them for 5 minutes, pay (fake gateway) and get a booking. Admins manage movies and shows. **A seat can never be booked twice.**
@@ -147,3 +148,6 @@ Errors are JSON: `{ "error": "message", "code": "…" }`.
 - The JWT lives in `localStorage` (simple, but exposed to XSS; httpOnly cookies would be the hardened alternative). No rate limiting on login.
 - Desktop-first layout. No Docker Compose and no front-end automated tests.
 - Not deployed (no live link).
+=======
+# movie-ticket-booking
+>>>>>>> origin/main
