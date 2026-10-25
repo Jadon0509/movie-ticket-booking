@@ -18,8 +18,9 @@ export const getMovie = (db: DB, id: number) => {
 };
 
 // available = 80 minus seats that are booked or still validly held
-const AVAILABLE_SQL = `${TOTAL_SEATS} - (SELECT COUNT(*) FROM seat_locks l
-  WHERE l.show_id = s.id AND (l.status = 'booked' OR l.expires_at > @now))`;
+const AVAILABLE_SQL = `MAX(0, ${TOTAL_SEATS} - (SELECT COUNT(*) FROM seat_locks l
+  WHERE l.show_id = s.id AND (l.status = 'booked' OR l.expires_at > @now))
+  - (SELECT COUNT(*) FROM damaged_seats))`;
 
 /** Only shows that have not started yet. */
 export function upcomingShowsForMovie(db: DB, movieId: number, now: string) {

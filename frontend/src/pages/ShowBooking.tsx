@@ -107,7 +107,7 @@ export default function ShowBooking() {
     } catch (e) {
       if (e instanceof ApiError) {
         setMsg({ kind: 'error', text: e.message });
-        if (e.code === 'SEAT_TAKEN') setSelected((p) => new Set([...p].filter((l) => !(e.body?.seats ?? []).includes(l))));
+        if (e.code === 'SEAT_TAKEN' || e.code === 'SEAT_DAMAGED') setSelected((p) => new Set([...p].filter((l) => !(e.body?.seats ?? []).includes(l))));
       }
     } finally { setBusy(false); load(); }
   };

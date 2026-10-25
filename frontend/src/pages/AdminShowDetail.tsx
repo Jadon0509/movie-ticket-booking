@@ -16,6 +16,27 @@ export default function AdminShowDetail() {
   }, [id]);
   useEffect(() => { load(); const t = setInterval(load, 5000); return () => clearInterval(t); }, [load]);
 
+  const [notice, setNotice] = useState<{ kind: 'error' | 'info'; text: string } | null>(null);
+  // Click a free seat -> mark damaged. Click a damaged seat -> repair it. Applies to ALL shows.
+  const toggleDamaged = async (label: string) => {
+    const seat = d?.seats.find((x) => x.label === label);
+    if (!seat) return;
+    setNotice(null);
+    try {
+      if (seat.status === 'damaged') {
+        await api('DELETE', `/admin/damaged-seats/${label}`);
+        setNotice({ kind: 'info', text: `Seat ${label} repaired. It can be booked again.` });
+      } else {
+        if (!confirm(`Mark seat ${label} as damaged for ALL shows? Customers will not be able to book it.`)) return;
+        await api('POST', '/admin/damaged-seats', { seat: label });
+        setNotice({ kind: 'info', text: `Seat ${label} marked as damaged.` });
+      }
+      load();
+    } catch (e) {
+      setNotice({ kind: 'error', text: e instanceof ApiError ? e.message : 'Could not update the seat' });
+    }
+  };
+
   if (error) return <div className="card"><p className="error">{error}</p><Link to="/admin">Back</Link></div>;
   if (!d) return <p className="muted">Loading…</p>;
   const { show } = d;
@@ -34,7 +55,9 @@ export default function AdminShowDetail() {
       <div className="admin-grid">
         <div>
           <h2>Seat map</h2>
-          <SeatMap seats={d.seats} readOnly />
+          <p className="muted small admin-seat-help">Click a free seat to mark it <strong>damaged</strong>; click a damaged seat (✕) to repair it. This applies to every show.</p>
+          {notice && <p className={notice.kind === 'error' ? 'error' : 'info'} role="alert">{notice.text}</p>}
+          <SeatMap seats={d.seats} adminMode onToggle={toggleDamaged} />
         </div>
         <div>
           <h2>Bookings</h2>

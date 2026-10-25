@@ -8,7 +8,7 @@ Full-stack take-home: customers browse movies, pick seats on an 8×10 seat map, 
 | Backend | Node.js 22 + Express 5 + TypeScript (REST API, runs separately on port 4000) |
 | Database | SQLite via Node's built-in `node:sqlite`, plain SQL, no ORM |
 | Auth | Email + password (bcrypt hashes), JWT bearer tokens |
-| Tests | Vitest + Supertest (23 backend tests) |
+| Tests | Vitest + Supertest (28 backend tests) |
 
 ## Run it locally
 
@@ -70,6 +70,8 @@ Admins can only be created by the seed script; the sign-up endpoint ignores any 
 9. Admin: booked/80, % full, money collected per show; booking list; same seat map
 10. Live seat updates by polling every 3 seconds
 
+**Extra feature: damaged seats.** An admin can mark a seat as damaged (or repair it) by clicking it on the admin show page. A damaged seat shows as ✕ on every show's seat map and can never be held or booked; the backend rejects it with `409 SEAT_DAMAGED` even if someone calls the API directly. A seat that is already booked or held for an upcoming show can't be marked damaged until those bookings are cancelled. The seed marks seat H10 as damaged for the demo.
+
 Not done / known limits are listed at the bottom.
 
 ## Key decisions
@@ -104,6 +106,7 @@ erDiagram
 | `shows` | `id` PK, `movie_id` FK, `starts_at`, `ends_at`, `price` (> 0); CHECK `ends_at > starts_at` |
 | `bookings` | `id` PK, `user_id` FK, `show_id` FK, `total_amount`, `status` (`confirmed`/`cancelled`), `created_at`, `cancelled_at` |
 | `booking_seats` | PK (`booking_id`, `seat_row`, `seat_number`); `booking_id` FK. Permanent record of a booking's seats |
+| `damaged_seats` | PK (`seat_row`, `seat_number`), `reason`, `marked_at`. Seats that are broken; apply to every show (one screen) |
 | `seat_locks` | **PK (`show_id`, `seat_row`, `seat_number`)** ← the anti-double-booking rule. Also `user_id` FK, `status` (`held`/`booked`), `booking_id` FK (null while held), `expires_at` (only while held). CHECK keeps the held/booked fields consistent |
 
 Seat rows are limited to A–H and numbers to 1–10 by CHECK constraints.
@@ -118,19 +121,21 @@ Seat rows are limited to A–H and numbers to 1–10 by CHECK constraints.
 | `POST /api/shows/:id/hold` · `DELETE …/hold` | user | hold up to 6 seats for 5 min / release |
 | `POST /api/shows/:id/checkout` `{outcome}` | user | fake payment: `success` books, `failure` returns 402 and keeps the hold |
 | `GET /api/bookings`, `GET /api/bookings/:id`, `POST /api/bookings/:id/cancel` | owner only | my bookings |
+| `/api/admin/damaged-seats` (GET, POST `{seat}`, DELETE/:seat) | admin | mark / repair damaged seats |
 | `/api/admin/movies` (POST, PUT/:id, DELETE/:id) · `/api/admin/shows` (GET, POST, DELETE/:id, GET/:id) | admin | management and stats |
 
 Errors are JSON: `{ "error": "message", "code": "…" }`.
 
 ## Tests
 
-`npm test` in `backend/` runs 23 tests against an in-memory database. The ones that matter most:
+`npm test` in `backend/` runs 28 tests against an in-memory database. The ones that matter most:
 
 - two users racing for the same seat → exactly one `201`, one `409`, and no leftover seats for the loser
 - the database itself rejects a second row for the same seat (no application code involved)
 - holds from **two separate database connections** to the same file cannot overlap
 - payment success / failure / paying after expiry; expired holds free the seat
 - bookings are private to their owner; cancel rules (2-hour cut-off, seats freed)
+- damaged seats: can't be held (all-or-nothing), shown as damaged, repair works, can't mark a booked seat, admin-only
 - admin: customers get `403`, overlap rejection, can't delete a show with bookings, stats
 
 ## Assumptions and limitations

@@ -43,4 +43,6 @@ if ((db.prepare('SELECT COUNT(*) c FROM movies').get() as { c: number }).c === 0
     }
   }
 }
+db.prepare('INSERT OR IGNORE INTO damaged_seats (seat_row, seat_number, reason, marked_at) VALUES (?,?,?,?)')
+  .run('H', 10, 'Broken recliner', new Date().toISOString()); // demo: seat H10 is damaged
 console.log('Seeded.\n  Admin:    %s / %s\n  Customer: %s / %s', ADMIN.email, ADMIN.password, CUSTOMER.email, CUSTOMER.password);

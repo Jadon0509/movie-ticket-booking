@@ -70,7 +70,9 @@ i.seat { display: inline-block; width: 18px; height: 16px; vertical-align: middl
 .seat.selected, .seat.mine { background: var(--seat-sel); border-color: var(--seat-sel); color: #fff; }
 .seat.held { background: var(--seat-held); border-color: var(--seat-held); color: #fff; }
 .seat.booked { background: var(--seat-booked); border-color: var(--seat-booked); color: #fff; }
+.seat.damaged { background: repeating-linear-gradient(45deg, #fecaca, #fecaca 4px, #fee2e2 4px, #fee2e2 8px); border-color: #ef4444; color: #b91c1c; font-weight: 700; }
 .seat:disabled { cursor: not-allowed; }
+.admin-seat-help { margin: 0 0 10px; }
 .legend { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; margin-top: 18px; font-size: .85rem; color: var(--muted); }
 
 .details { display: grid; grid-template-columns: 120px 1fr; gap: 6px 12px; margin: 12px 0; } .details dt { color: var(--muted); } .details dd { margin: 0; }

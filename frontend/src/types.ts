@@ -2,7 +2,7 @@ export type Role = 'customer' | 'admin';
 export interface User { id: number; name: string; email: string; role: Role }
 export interface Movie { id: number; title: string; description: string; posterUrl: string; language: string; durationMinutes: number; rating: 'U' | 'UA' | 'A' }
 export interface ShowSummary { id: number; startsAt: string; endsAt: string; price: number; availableSeats: number }
-export type SeatStatus = 'available' | 'held' | 'booked' | 'mine';
+export type SeatStatus = 'available' | 'held' | 'booked' | 'mine' | 'damaged';
 export interface Seat { row: string; number: number; label: string; status: SeatStatus }
 export interface ShowInfo {
   id: number; movieId: number; startsAt: string; endsAt: string; price: number; availableSeats: number; started: boolean;

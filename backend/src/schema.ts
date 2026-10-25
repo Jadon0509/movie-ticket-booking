@@ -70,4 +70,14 @@ CREATE TABLE IF NOT EXISTS seat_locks (
   )
 );
 CREATE INDEX IF NOT EXISTS idx_seat_locks_user ON seat_locks(user_id, show_id);
+
+-- Seats that are physically broken. One screen => a damaged seat is damaged for
+-- every show, so this table has no show_id. Customers can never hold these.
+CREATE TABLE IF NOT EXISTS damaged_seats (
+  seat_row    TEXT    NOT NULL CHECK (seat_row IN ('A','B','C','D','E','F','G','H')),
+  seat_number INTEGER NOT NULL CHECK (seat_number BETWEEN 1 AND 10),
+  reason      TEXT    NOT NULL DEFAULT '',
+  marked_at   TEXT    NOT NULL,
+  PRIMARY KEY (seat_row, seat_number)
+);
 `;

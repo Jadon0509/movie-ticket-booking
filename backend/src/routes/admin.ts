@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import type { DB } from '../db';
 import { HttpError } from '../errors';
-import { getSeatMap } from '../services/seats';
+import { getSeatMap, listDamagedSeats, markSeatDamaged, repairSeat } from '../services/seats';
 import {
   adminListShows, adminShowDetail, createMovie, createShow, deleteMovie, deleteShow, updateMovie,
 } from '../services/shows';
@@ -29,6 +29,15 @@ export function adminRoutes(db: DB, requireAdmin: any) {
   r.post('/movies', (req, res) => res.status(201).json({ movie: createMovie(db, parse(movieSchema, req.body)) }));
   r.put('/movies/:id', (req, res) => res.json({ movie: updateMovie(db, idParam(req), parse(movieSchema, req.body)) }));
   r.delete('/movies/:id', (req, res) => { deleteMovie(db, idParam(req)); res.status(204).end(); });
+
+  // Damaged seats: apply to every show (one screen)
+  r.get('/damaged-seats', (_req, res) => res.json({ seats: listDamagedSeats(db) }));
+  r.post('/damaged-seats', (req, res) => {
+    const b = parse(z.object({ seat: z.string(), reason: z.string().trim().max(200).default('') }), req.body);
+    const seat = markSeatDamaged(db, b.seat, b.reason, nowIso());
+    res.status(201).json({ seat });
+  });
+  r.delete('/damaged-seats/:seat', (req, res) => { repairSeat(db, req.params.seat); res.status(204).end(); });
 
   r.get('/shows', (_req, res) => res.json({ shows: adminListShows(db) }));
   r.post('/shows', (req, res) => {

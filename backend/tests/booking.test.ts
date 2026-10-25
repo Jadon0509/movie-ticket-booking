@@ -251,3 +251,53 @@ describe('admin (flows 7 and 9)', () => {
     expect(res.body.seats.find((s: any) => s.label === 'A1').status).toBe('booked');
   });
 });
+
+describe('damaged seats', () => {
+  const admin = (c: Ctx) => bearer(c.adminToken);
+  const markDamaged = (c: Ctx, seat: string) => c.api.post('/api/admin/damaged-seats').set(admin(c)).send({ seat });
+
+  it('a damaged seat cannot be held, and nothing else in that request is held either', async () => {
+    const a = await newUser(ctx, 'Alice');
+    expect((await markDamaged(ctx, 'C4')).status).toBe(201);
+    const res = await hold(ctx, a.token, ['C3', 'C4']);
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe('SEAT_DAMAGED');
+    expect(res.body.seats).toEqual(['C4']);
+    expect(res.body.error).toMatch(/damaged/);
+    expect(ctx.db.prepare('SELECT COUNT(*) c FROM seat_locks').get()).toEqual({ c: 0 }); // all-or-nothing
+  });
+
+  it('shows the seat as damaged on the map and removes it from the available counts', async () => {
+    const a = await newUser(ctx, 'Alice');
+    await markDamaged(ctx, 'H10');
+    const map = (await ctx.api.get(`/api/shows/${ctx.showId}/seats`).set(bearer(a.token))).body;
+    expect(map.seats.find((s: any) => s.label === 'H10').status).toBe('damaged');
+    expect(map.availableCount).toBe(79);
+    expect((await ctx.api.get(`/api/movies/${ctx.movieId}`)).body.shows[0].availableSeats).toBe(79);
+  });
+
+  it('a repaired seat can be booked again', async () => {
+    const a = await newUser(ctx, 'Alice');
+    await markDamaged(ctx, 'B2');
+    expect((await hold(ctx, a.token, ['B2'])).status).toBe(409);
+    expect((await ctx.api.delete('/api/admin/damaged-seats/B2').set(admin(ctx))).status).toBe(204);
+    expect((await hold(ctx, a.token, ['B2'])).status).toBe(201);
+  });
+
+  it('cannot mark a seat that is booked for an upcoming show', async () => {
+    const a = await newUser(ctx, 'Alice');
+    await hold(ctx, a.token, ['D5']);
+    await pay(ctx, a.token, 'success');
+    const res = await markDamaged(ctx, 'D5');
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe('SEAT_IN_USE');
+  });
+
+  it('only admins can mark or list damaged seats; bad seat names are rejected', async () => {
+    const a = await newUser(ctx, 'Alice');
+    expect((await ctx.api.post('/api/admin/damaged-seats').set(bearer(a.token)).send({ seat: 'A1' })).status).toBe(403);
+    expect((await ctx.api.get('/api/admin/damaged-seats')).status).toBe(401);
+    expect((await markDamaged(ctx, 'Z99')).status).toBe(400);
+    expect((await ctx.api.delete('/api/admin/damaged-seats/A1').set(admin(ctx))).status).toBe(404);
+  });
+});

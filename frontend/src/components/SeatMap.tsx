@@ -6,12 +6,14 @@ interface Props {
   onToggle?: (label: string) => void;
   /** true = nothing is clickable (admin view, or while seats are held) */
   readOnly?: boolean;
+  /** admin mode: free seats AND damaged seats are clickable (to mark / repair) */
+  adminMode?: boolean;
 }
 
 const ROWS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-const TITLE: Record<string, string> = { available: 'Available', held: 'Held by someone else', booked: 'Booked', mine: 'Held for you' };
+const TITLE: Record<string, string> = { available: 'Available', held: 'Held by someone else', booked: 'Booked', mine: 'Held for you', damaged: 'Damaged (cannot be booked)' };
 
-export default function SeatMap({ seats, selected = new Set(), onToggle, readOnly }: Props) {
+export default function SeatMap({ seats, selected = new Set(), onToggle, readOnly, adminMode }: Props) {
   const byRow = (r: string) => seats.filter((s) => s.row === r);
   return (
     <div className="seatmap">
@@ -22,7 +24,7 @@ export default function SeatMap({ seats, selected = new Set(), onToggle, readOnl
           {byRow(r).map((s) => {
             const isSel = selected.has(s.label);
             const cls = isSel ? 'selected' : s.status;
-            const clickable = !readOnly && s.status === 'available';
+            const clickable = adminMode ? s.status === 'available' || s.status === 'damaged' : !readOnly && s.status === 'available';
             return (
               <button
                 key={s.label}
@@ -34,7 +36,7 @@ export default function SeatMap({ seats, selected = new Set(), onToggle, readOnl
                 title={`${s.label}: ${isSel ? 'Selected' : TITLE[s.status]}`}
                 onClick={() => onToggle?.(s.label)}
               >
-                {s.number}
+                {s.status === 'damaged' ? '✕' : s.number}
               </button>
             );
           })}
@@ -46,6 +48,7 @@ export default function SeatMap({ seats, selected = new Set(), onToggle, readOnl
         <span><i className="seat selected" /> Selected / yours</span>
         <span><i className="seat held" /> Held by someone else</span>
         <span><i className="seat booked" /> Booked</span>
+        <span><i className="seat damaged" /> Damaged</span>
       </div>
     </div>
   );
