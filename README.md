@@ -1,6 +1,27 @@
 # 🎬 Yozigo Cinema — Movie Ticket Booking App
 
 <p align="center">
+  <img src="docs/images/yozigo-cinema-banner.png" alt="Yozigo Cinema — Cinematic Movie Ticket Booking Experience" width="100%" />
+</p>
+
+<p align="center">
+  <strong>Your Seats. Your Movie. Your Experience.</strong>
+  <br />
+  Book movie tickets, choose your seats, and enjoy a seamless cinema experience.
+</p>
+
+<p align="center">
+  🎟️ Smart Seat Booking · 🍿 Movie Shows · 🔐 Secure Authentication
+</p>
+
+---
+
+
+
+
+# 🎬 Yozigo Cinema — Movie Ticket Booking App
+
+<p align="center">
   <img src="https://img.shields.io/badge/CINEMA-MOVIE%20BOOKING-e50914?style=for-the-badge&logo=themoviedatabase&logoColor=white" alt="Yozigo Cinema" />
   <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React 19" />
   <img src="https://img.shields.io/badge/Node.js-22-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js 22" />
